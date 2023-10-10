@@ -3,12 +3,16 @@ package com.example.bluetooth28;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -67,7 +71,8 @@ public class MainActivity extends AppCompatActivity {
             print("Permission not there yet already ");
             Toast.makeText(MainActivity.this, "NEED PERMISSION ", Toast.LENGTH_SHORT).show();
             // request to activate Bluetooth from the user
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_CODE);
+//            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_CODE);
+            requestMultiplePermissions();
             return;
         } else {
             display("Permission already GRANTED");
@@ -79,31 +84,6 @@ public class MainActivity extends AppCompatActivity {
             print("Enabling Bluetooth");
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivity(enableIntent);
-        }
-    }
-
-    private void requestBluetoothPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH)) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Permission Need")
-                    .setMessage("This permission is needed because of this and that")
-                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            ActivityCompat.requestPermissions(MainActivity.this, new String[]
-                                            {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN},
-                                    BLUETOOTH_PERMISSION_CODE);
-                        }
-                    }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                        }
-                    }).create().show();
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]
-                            {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN},
-                    BLUETOOTH_PERMISSION_CODE);
         }
     }
 
@@ -120,39 +100,61 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void scanLeDevice() {
-        if (!scanning) {
-            //stops scanning after a predefined scan period
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    scanning = false;
-                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.BLUETOOTH_SCAN}, BLUETOOTH_PERMISSION_CODE);
-                        return;
-                    }
-                    bluetoothLeScanner.stopScan(leScanCallback);
-                }
-            }, SCAN_PERIOD);
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(bluetoothReceiver, filter);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+            requestMultiplePermissions();
+            return;
+        }
+        bluetoothAdapter.startDiscovery();
+    }
 
-            scanning = true;
-            bluetoothLeScanner.startScan(leScanCallback);
-        }else{
-            scanning = false;
-            bluetoothLeScanner.stopScan(leScanCallback);
+    private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (BluetoothDevice.ACTION_FOUND.equals(intent.getAction())) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    requestMultiplePermissions();
+                    return;
+                }
+                String deviceName = device.getName();
+                print(deviceName);
+
+            }
         }
     };
 
-//        private LeDeviceListAdapter leDeviceListAdapter = new LeDeviceListAdapter();
+    private void requestMultiplePermissions() {
+        String[] permissions = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_FINE_LOCATION};
+        ActivityCompat.requestPermissions(this, permissions, BLUETOOTH_PERMISSION_CODE);
+    }
+
+
+    //        private LeDeviceListAdapter leDeviceListAdapter = new LeDeviceListAdapter();
     private final ScanCallback leScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-//            leDeviceListAdapter.addDevice(result.getDevice());
-//            leDeviceListAdapter.notifyDataSetChanged();
-            String res = String.valueOf(result.getDevice());
-            print(res);
+            BluetoothDevice device = result.getDevice();
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_CODE);
+                return;
+            }
+            Log.i(TAG, "Discovered device: " + device.getName() + " @ " + device.getAddress());
         }
     };
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+            requestMultiplePermissions();
+            return;
+        }
+        bluetoothAdapter.cancelDiscovery();
+    }
 
     public void print(String msg){
         Log.d(TAG, msg);
