@@ -1,5 +1,6 @@
 package com.example.bluetooth28;
 
+
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -21,7 +23,7 @@ public class Utils {
         return true;
     }
 
-    public static void enableBluetooth(Activity activity, BluetoothAdapter adapter, BR_BLUETOOTHSTATE bluetoothState) {
+    public static void enableBluetooth(Activity activity,BR_BLUETOOTHSTATE bluetoothState) {
 
             Log.d(TAG, "Enabling Bluetooth");
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -35,6 +37,18 @@ public class Utils {
             IntentFilter newIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             activity.registerReceiver(bluetoothState, newIntent);
         };
+
+    public static void disableBluetooth(Activity activity, BR_BLUETOOTHSTATE bluetoothState) {
+            // guide user to disable bluetooth
+            Intent intent = new Intent();
+            intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
+            activity.startActivity(intent);
+
+            // broadcast the fact that bluetooth changed
+            IntentFilter newIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            activity.registerReceiver(bluetoothState, newIntent);
+        }
+
     public static void requestPermissions(Activity activity) {
         int BLUETOOTH_PERMISSION_CODE = 1;
         String[] permissions = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_FINE_LOCATION};

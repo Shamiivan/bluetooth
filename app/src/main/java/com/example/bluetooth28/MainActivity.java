@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         btnOn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!Utils.hasBluetooth(bluetoothAdapter)) Utils.enableBluetooth(MainActivity.this,bluetoothAdapter, bluetoothState);
+                if(!Utils.hasBluetooth(bluetoothAdapter)) Utils.enableBluetooth(MainActivity.this,bluetoothState);
             }
         });
 
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         btnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                disableBluetooth();
+                if(Utils.hasBluetooth(bluetoothAdapter)) Utils.disableBluetooth(MainActivity.this,bluetoothState);
             }
         });
 
@@ -71,30 +71,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-    private void disableBluetooth() {
-        if (bluetoothAdapter == null) {
-            Utils.print("enableBluetooth: Device does not support Bluetooth.");
-            return;
-        }
-        if (bluetoothAdapter.isEnabled()) {
-            Log.d(TAG, "Disabling bluetooth");
-            // check permissions
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                Utils.requestPermissions(MainActivity.this);
-                return;
-            }
-
-            // guide user to disable bluetooth
-            Intent intent = new Intent();
-            intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
-            startActivity(intent);
-
-            // broadcast the fact that bluetooth changed
-            IntentFilter newIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-            registerReceiver(bluetoothState, newIntent);
-        }else  {Utils.print(" Trying to disable but it is already disabled");}
-    }
 
     @Override
     protected void onPause() {
@@ -114,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        if(!Utils.hasBluetooth(bluetoothAdapter)) Utils.enableBluetooth(MainActivity.this,bluetoothAdapter, bluetoothState);
+        if(!Utils.hasBluetooth(bluetoothAdapter)) Utils.enableBluetooth(MainActivity.this,bluetoothState);
     }
     @Override
     protected void onDestroy() {
