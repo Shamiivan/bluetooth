@@ -17,6 +17,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -34,11 +35,38 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter bluetoothAdapter;
     private static final int REQUEST_ENABLE_BT = 1;
     private int BLUETOOTH_PERMISSION_CODE = 1;
-    private BluetoothLeScanner bluetoothLeScanner;
     private Handler handler;
-    private static final long SCAN_PERIOD = 10000;
-    private List<BluetoothDevice> deviceList = new ArrayList<>();
 
+
+
+
+
+    //create a broadcast receiver for
+    private final BroadcastReceiver bluetoothState = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+
+            if(action.equals(bluetoothAdapter.ACTION_STATE_CHANGED)){
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, bluetoothAdapter.ERROR);
+                switch (state){
+                    case BluetoothAdapter.STATE_OFF:
+                        print("onReceive: State OFF");
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        print("on Receive : State Turning OFF");
+                        break;
+
+                    case BluetoothAdapter.STATE_ON:
+                        print("onReceive : State ON");
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        print("onReceive : State Turning on");
+                        break;
+                }
+            }
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,46 +74,30 @@ public class MainActivity extends AppCompatActivity {
         print("onCreate()");
         BluetoothManager bluetoothManager = getSystemService(BluetoothManager.class);
         bluetoothAdapter = bluetoothManager.getAdapter();
-        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         handler = new Handler();
 
-        Button btn = findViewById(R.id.btn);
-        btn.setOnClickListener(new View.OnClickListener() {
+        Button btnOn = findViewById(R.id.btnOn);
+        btnOn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 enableBluetooth();
             }
         });
 
-        Button scanBtn = findViewById(R.id.scan);
-        scanBtn.setOnClickListener(new View.OnClickListener() {
+        Button btnOff = findViewById(R.id.btnOff);
+        btnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                scanLeDevice();
+                disableBluetooth();
             }
         });
 
-        Button showBtn = findViewById(R.id.show);
-        showBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-                for (BluetoothDevice device : deviceList) {
-                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                        requestMultiplePermissions();
-                        return;
-                    }
-                    Log.i(TAG, "Device: " + device.getName() + " @ " + device.getAddress());
-                }
-            }
-        });
-
-        requestMultiplePermissions();
     }
 
     private void enableBluetooth() {
         if (bluetoothAdapter == null) {
-            Log.d(TAG, "enableDisableBT: Device does not support Bluetooth.");
+            print("enableBluetooth: Device does not support Bluetooth.");
             return;
         }
         if (!bluetoothAdapter.isEnabled()) {
@@ -96,42 +108,40 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             startActivity(enableIntent);
+
+            // broadcast the fact that bluetooth changed
+
+            IntentFilter newIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(bluetoothState, newIntent);
+        } else{
+            print(" Trying to enable but it is already enabled");
         }
     }
 
-    private void scanLeDevice() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
-            requestMultiplePermissions();
+
+    private void disableBluetooth() {
+        if (bluetoothAdapter == null) {
+            print("enableBluetooth: Device does not support Bluetooth.");
             return;
         }
-
-        bluetoothLeScanner.startScan(leScanCallback);
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                    requestMultiplePermissions();
-                    return;
-                }
-                bluetoothLeScanner.stopScan(leScanCallback);
-            }
-        }, SCAN_PERIOD);
-    }
-
-    private final ScanCallback leScanCallback = new ScanCallback() {
-        @Override
-        public void onScanResult(int callbackType, ScanResult result) {
-            super.onScanResult(callbackType, result);
-            BluetoothDevice device = result.getDevice();
-            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+        if (bluetoothAdapter.isEnabled()) {
+            Log.d(TAG, "Disabling bluetooth");
+            // check permissions
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 requestMultiplePermissions();
                 return;
             }
-            Log.i(TAG, "Discovered device: " + device.getName() + " @ " + device.getAddress());
-            deviceList.add(device);
-        }
-    };
 
+            // guide user to disable bluetooth
+            Intent intent = new Intent();
+            intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
+            startActivity(intent);
+
+            // broadcast the fact that bluetooth changed
+            IntentFilter newIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(bluetoothState, newIntent);
+        }else  {print(" Trying to disable but it is already disabled");}
+    }
 
     @Override
     protected void onPause() {
@@ -157,25 +167,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void stopScan() {
-        if (bluetoothLeScanner != null) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                requestMultiplePermissions();
-                return;
-            }
-            bluetoothLeScanner.stopScan(leScanCallback);
-        }
-    }
 
-    private void displayDevices() {
-        for (BluetoothDevice device : deviceList) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                requestMultiplePermissions();
-                return;
-            }
-            Log.i(TAG, "Device: " + device.getName() + " @ " + device.getAddress());
-        }
-    }
 
     @Override
     public void onResume() {
@@ -187,6 +179,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopScan();
+        unregisterReceiver(bluetoothState);
     }
 }
