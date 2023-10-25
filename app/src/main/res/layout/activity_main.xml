@@ -8,10 +8,10 @@
     tools:context="com.example.bluetooth28.MainActivity" >
 
     <Button
-        android:id="@+id/btn"
+        android:id="@+id/btnOn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Request Permission"
+        android:text="Turn on Bluetooth"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -19,27 +19,39 @@
         app:layout_constraintVertical_bias="0.399" />
 
     <Button
+        android:id="@+id/btnOff"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Turn off bluetooth"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.516"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.483" />
+
+
+    <Button
         android:id="@+id/scan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scan LE Devices"
+        android:text="Scan"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintHorizontal_bias="0.463"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.674" />
+        app:layout_constraintVertical_bias="0.644" />
 
     <Button
-        android:id="@+id/show"
+        android:id="@+id/stopScan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Show results"
+        android:text="Stop Scan"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.532"
+        app:layout_constraintHorizontal_bias="0.463"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.834" />
-
+        app:layout_constraintVertical_bias="0.551" />
 </androidx.constraintlayout.widget.ConstraintLayout>
