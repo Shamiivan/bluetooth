@@ -6,9 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 
 //Broadcast Receiver
-public class BR_BLUETOOTHSTATE extends BroadcastReceiver {
+public class BR_BLUETOOTH_STATE extends BroadcastReceiver {
     Context activityContext;
-    public BR_BLUETOOTHSTATE(Context _activityContext){
+    public BR_BLUETOOTH_STATE(Context _activityContext){
         this.activityContext = _activityContext;
     }
     @Override

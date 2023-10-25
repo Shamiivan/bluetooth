@@ -4,11 +4,9 @@ package com.example.bluetooth28;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.provider.Settings;
 import android.util.Log;
@@ -23,7 +21,7 @@ public class Utils {
         return true;
     }
 
-    public static void enableBluetooth(Activity activity,BR_BLUETOOTHSTATE bluetoothState) {
+    public static void enableBluetooth(Activity activity, BR_BLUETOOTH_STATE bluetoothState) {
 
             Log.d(TAG, "Enabling Bluetooth");
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -38,7 +36,7 @@ public class Utils {
             activity.registerReceiver(bluetoothState, newIntent);
         };
 
-    public static void disableBluetooth(Activity activity, BR_BLUETOOTHSTATE bluetoothState) {
+    public static void disableBluetooth(Activity activity, BR_BLUETOOTH_STATE bluetoothState) {
             // guide user to disable bluetooth
             Intent intent = new Intent();
             intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
@@ -61,6 +59,7 @@ public class Utils {
     public static void display(Context context,  String msg) {
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
     }
+
 };
 
 
